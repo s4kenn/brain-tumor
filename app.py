@@ -227,7 +227,7 @@ elif app_mode == "Tumor Detection":
             st.image(image, caption="Uploaded Image", use_column_width=True)
 
             if st.button("Predict"):
-                with st.spinner('Predicting...'):
+                with st.spinner('Predicting....'):
                     prediction, confidence = predict(image)
                 if prediction:
                     st.write(f"Prediction: {prediction}")
