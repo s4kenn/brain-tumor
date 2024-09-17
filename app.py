@@ -234,7 +234,7 @@ elif app_mode == "Tumor Detection":
                     st.write(f"Confidence: {confidence:.2f}%")  # Display confidence score
                     explain_prediction(image, model)
                     # tumor_info = get_tumor_info(prediction)
-                    st.write(f"Tumor Information: {tumor_info}")
+                    # st.write(f"Tumor Information: {tumor_info}")
                     # speak_text(tumor_info)  # Commented out TTS function
         else:
             st.error("Invalid MRI image. Please upload a valid MRI image.")
