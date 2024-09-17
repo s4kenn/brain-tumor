@@ -6,7 +6,6 @@ import tensorflow as tf
 from PIL import Image
 import numpy as np
 import wikipediaapi as wikipedia
-import pyttsx3
 import pydicom
 from lime import lime_image
 import matplotlib.pyplot as plt
@@ -137,7 +136,6 @@ def explain_prediction(image, model):
     except Exception as e:
         st.error(f"Error in explanation: {e}")
 
-
 # Function to get tumor information from Wikipedia
 def get_tumor_info(tumor_type):
     try:
@@ -157,10 +155,10 @@ def get_chatbot_response(query):
         st.error(f"Error with Google Gemini API: {e}")
         return "Sorry, I couldn't fetch the response."
 
-# Initialize TTS engine
-engine = pyttsx3.init()
+# Initialize TTS engine (commented out)
+# engine = pyttsx3.init()
 
-# Function to speak out the response
+# Function to speak out the response (commented out)
 # def speak_text(text):
 #     try:
 #         engine.say(text)
@@ -232,24 +230,6 @@ elif app_mode == "Tumor Detection":
                     explain_prediction(image, model)
                     tumor_info = get_tumor_info(prediction)
                     st.write(f"Tumor Information: {tumor_info}")
-                    # speak_text(tumor_info)
+                    # speak_text(tumor_info)  # Commented out
         else:
             st.error("Invalid MRI image. Please upload a valid MRI image.")
-
-# elif app_mode == "HELP ASSIST":
-#     st.header("Chat with the Assist")
-
-#     # Initialize chat session if not already present
-#     if "chat_session" not in st.session_state:
-#         st.session_state.chat_session = model_gemini.generate_text(prompt="Initialize chat session")
-
-#     # Display the chat history
-#     if "chat_session" in st.session_state:
-#         st.write(st.session_state.chat_session)  # Modify as needed for proper chat history display
-
-#     # Input field for user's message
-#     user_prompt = st.chat_input("ASK FOR PRECAUTIONS:")
-#     if user_prompt:
-#         st.chat_message("user").markdown(user_prompt)
-#         gemini_response = get_chatbot_response(user_prompt)
-#         st.chat_message("assistant").markdown(gemini_response)
