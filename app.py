@@ -5,7 +5,8 @@ import google.generativeai as gen_ai
 import tensorflow as tf
 from PIL import Image
 import numpy as np
-import wikipediaapi as wikipedia
+import wikipediaapi
+import pyttsx3
 import pydicom
 from lime import lime_image
 import matplotlib.pyplot as plt
@@ -138,13 +139,17 @@ def explain_prediction(image, model):
 
 # Function to get tumor information from Wikipedia
 def get_tumor_info(tumor_type):
+    wiki_wiki = wikipediaapi.Wikipedia('en')  # Initialize the Wikipedia API
     try:
-        summary = wikipedia.summary(tumor_type, sentences=2)
+        page = wiki_wiki.page(tumor_type)
+        if not page.exists():
+            return f"No information found on Wikipedia for {tumor_type}."
+        summary = page.summary[:500]  # Fetch a summary (adjust length as needed)
         return summary
-    except wikipedia.exceptions.DisambiguationError:
+    except wikipediaapi.exceptions.DisambiguationError:
         return f"Multiple results found for {tumor_type}. Please specify further."
-    except wikipedia.exceptions.PageError:
-        return f"No information found on Wikipedia for {tumor_type}."
+    except Exception as e:
+        return f"An error occurred: {e}"
 
 # Function to get a response from Google Gemini
 def get_chatbot_response(query):
@@ -155,14 +160,14 @@ def get_chatbot_response(query):
         st.error(f"Error with Google Gemini API: {e}")
         return "Sorry, I couldn't fetch the response."
 
-# Initialize TTS engine (commented out)
-# engine = pyttsx3.init()
+# Initialize TTS engine
+# Removed pyttsx3 initialization to avoid local system dependency issues
 
-# Function to speak out the response (commented out)
+# Function to speak out the response (if using cloud-based TTS)
 # def speak_text(text):
 #     try:
-#         engine.say(text)
-#         engine.runAndWait()
+#         # Implement cloud-based TTS here
+#         pass
 #     except Exception as e:
 #         st.error(f"Error with TTS: {e}")
 
@@ -230,6 +235,24 @@ elif app_mode == "Tumor Detection":
                     explain_prediction(image, model)
                     tumor_info = get_tumor_info(prediction)
                     st.write(f"Tumor Information: {tumor_info}")
-                    # speak_text(tumor_info)  # Commented out
+                    # speak_text(tumor_info)  # Commented out TTS function
         else:
             st.error("Invalid MRI image. Please upload a valid MRI image.")
+
+# elif app_mode == "HELP ASSIST":
+#     st.header("Chat with the Assist")
+
+#     # Initialize chat session if not already present
+#     if "chat_session" not in st.session_state:
+#         st.session_state.chat_session = model_gemini.generate_text(prompt="Initialize chat session")
+
+#     # Display the chat history
+#     if "chat_session" in st.session_state:
+#         st.write(st.session_state.chat_session)  # Modify as needed for proper chat history display
+
+#     # Input field for user's message
+#     user_prompt = st.chat_input("ASK FOR PRECAUTIONS:")
+#     if user_prompt:
+#         st.chat_message("user").markdown(user_prompt)
+#         gemini_response = get_chatbot_response(user_prompt)
+#         st.chat_message("assistant").markdown(gemini_response)
