@@ -138,18 +138,18 @@ def explain_prediction(image, model):
         st.error(f"Error in explanation: {e}")
 
 # Function to get tumor information from Wikipedia
-def get_tumor_info(tumor_type):
-    wiki_wiki = wikipediaapi.Wikipedia('en')  # Initialize the Wikipedia API
-    try:
-        page = wiki_wiki.page(tumor_type)
-        if not page.exists():
-            return f"No information found on Wikipedia for {tumor_type}."
-        summary = page.summary[:500]  # Fetch a summary (adjust length as needed)
-        return summary
-    except wikipediaapi.exceptions.DisambiguationError:
-        return f"Multiple results found for {tumor_type}. Please specify further."
-    except Exception as e:
-        return f"An error occurred: {e}"
+# def get_tumor_info(tumor_type):
+#     wiki_wiki = wikipediaapi.Wikipedia('en')  # Initialize the Wikipedia API
+#     try:
+#         page = wiki_wiki.page(tumor_type)
+#         if not page.exists():
+#             return f"No information found on Wikipedia for {tumor_type}."
+#         summary = page.summary[:500]  # Fetch a summary (adjust length as needed)
+#         return summary
+#     except wikipediaapi.exceptions.DisambiguationError:
+#         return f"Multiple results found for {tumor_type}. Please specify further."
+#     except Exception as e:
+#         return f"An error occurred: {e}"
 
 # Function to get a response from Google Gemini
 def get_chatbot_response(query):
@@ -233,7 +233,7 @@ elif app_mode == "Tumor Detection":
                     st.write(f"Prediction: {prediction}")
                     st.write(f"Confidence: {confidence:.2f}%")  # Display confidence score
                     explain_prediction(image, model)
-                    tumor_info = get_tumor_info(prediction)
+                    # tumor_info = get_tumor_info(prediction)
                     st.write(f"Tumor Information: {tumor_info}")
                     # speak_text(tumor_info)  # Commented out TTS function
         else:
