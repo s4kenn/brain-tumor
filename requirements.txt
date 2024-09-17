@@ -1,0 +1,11 @@
+streamlit
+python-dotenv
+google-generativeai
+tensorflow
+pillow
+numpy
+wikipedia-api
+pyttsx3
+pydicom
+lime
+matplotlib
