@@ -5,7 +5,7 @@ import google.generativeai as gen_ai
 import tensorflow as tf
 from PIL import Image
 import numpy as np
-import wikipedia
+# import wikipedia
 import pyttsx3
 import pydicom
 from lime import lime_image
