@@ -66,7 +66,7 @@ def resize_image_for_display(image, max_width=512):
     if width > max_width:
         aspect_ratio = height / width
         new_height = int(aspect_ratio * max_width)
-        image = image.resize((max_width, new_height), Image.ANTIALIAS)
+        image = image.resize((max_width, new_height), Image.Resampling.LANCZOS)
     return image
 
 # Enhanced validation function using pydicom
