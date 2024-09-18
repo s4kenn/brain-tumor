@@ -5,7 +5,7 @@ import google.generativeai as gen_ai
 import tensorflow as tf
 from PIL import Image
 import numpy as np
-import wikipediaapi
+import wikipedia
 import pyttsx3
 import pydicom
 from lime import lime_image
@@ -137,19 +137,16 @@ def explain_prediction(image, model):
     except Exception as e:
         st.error(f"Error in explanation: {e}")
 
+
 # Function to get tumor information from Wikipedia
 # def get_tumor_info(tumor_type):
-#     wiki_wiki = wikipediaapi.Wikipedia('en')  # Initialize the Wikipedia API
 #     try:
-#         page = wiki_wiki.page(tumor_type)
-#         if not page.exists():
-#             return f"No information found on Wikipedia for {tumor_type}."
-#         summary = page.summary[:500]  # Fetch a summary (adjust length as needed)
+#         summary = wikipedia.summary(tumor_type, sentences=2)
 #         return summary
-#     except wikipediaapi.exceptions.DisambiguationError:
+#     except wikipedia.exceptions.DisambiguationError:
 #         return f"Multiple results found for {tumor_type}. Please specify further."
-#     except Exception as e:
-#         return f"An error occurred: {e}"
+#     except wikipedia.exceptions.PageError:
+#         return f"No information found on Wikipedia for {tumor_type}."
 
 # Function to get a response from Google Gemini
 def get_chatbot_response(query):
@@ -161,13 +158,13 @@ def get_chatbot_response(query):
         return "Sorry, I couldn't fetch the response."
 
 # Initialize TTS engine
-# Removed pyttsx3 initialization to avoid local system dependency issues
+engine = pyttsx3.init()
 
-# Function to speak out the response (if using cloud-based TTS)
+# Function to speak out the response
 # def speak_text(text):
 #     try:
-#         # Implement cloud-based TTS here
-#         pass
+#         engine.say(text)
+#         engine.runAndWait()
 #     except Exception as e:
 #         st.error(f"Error with TTS: {e}")
 
@@ -227,7 +224,7 @@ elif app_mode == "Tumor Detection":
             st.image(image, caption="Uploaded Image", use_column_width=True)
 
             if st.button("Predict"):
-                with st.spinner('Predicting....'):
+                with st.spinner('Predicting...'):
                     prediction, confidence = predict(image)
                 if prediction:
                     st.write(f"Prediction: {prediction}")
@@ -235,7 +232,7 @@ elif app_mode == "Tumor Detection":
                     explain_prediction(image, model)
                     # tumor_info = get_tumor_info(prediction)
                     # st.write(f"Tumor Information: {tumor_info}")
-                    # speak_text(tumor_info)  # Commented out TTS function
+                    # speak_text(tumor_info)
         else:
             st.error("Invalid MRI image. Please upload a valid MRI image.")
 
