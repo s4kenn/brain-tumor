@@ -5,8 +5,6 @@ import google.generativeai as gen_ai
 import tensorflow as tf
 from PIL import Image
 import numpy as np
-# import wikipedia
-import pyttsx3
 import pydicom
 from lime import lime_image
 import matplotlib.pyplot as plt
@@ -16,13 +14,13 @@ load_dotenv()
 
 # Configure Streamlit page settings
 st.set_page_config(
-    page_title="Brain Tumor Detection & Help Assist.",
+    page_title="Brain Tumor Detection & Assist",
     page_icon=":brain:",
     layout="wide",
 )
 
 # Google Gemini API credentials
-api_key = os.getenv('AIzaSyChnJgAjjsqy2HFVfzcbsUBtpoIdTdls-s')  # Ensure this key is in your .env file
+api_key = os.getenv('AIzaSyChnJgAjjsqy2HFVfzcbsUBtpoIdTdls-s')  # Ensure this is stored in your .env file
 gen_ai.configure(api_key=api_key)
 model_gemini = gen_ai.GenerativeModel('gemini-pro')
 
@@ -30,41 +28,14 @@ model_gemini = gen_ai.GenerativeModel('gemini-pro')
 categories = ["glioma", "meningioma", "no tumor", "pituitary"]
 
 symptoms = {
-    "Glioma": [
-        "Headaches",
-        "Seizures",
-        "Vision problems",
-        "Nausea and vomiting",
-        "Difficulty with balance and coordination",
-        "Changes in personality or behavior",
-        "Weakness or numbness in limbs"
-    ],
-    "Meningioma": [
-        "Headaches",
-        "Seizures",
-        "Vision changes",
-        "Hearing loss or ringing in the ears",
-        "Nausea and vomiting",
-        "Weakness or numbness",
-        "Difficulty with speech or movement"
-    ],
-    "No Tumor": [
-        "No specific symptoms related to a tumor; symptoms are typically related to other conditions."
-    ],
-    "Pituitary Tumor": [
-        "Headaches",
-        "Vision problems",
-        "Unexplained weight gain or loss",
-        "Changes in menstrual cycle or sexual function",
-        "Growth of hands and feet (in case of acromegaly)",
-        "Fatigue",
-        "Changes in mood or cognitive functions"
-    ]
+    "Glioma": ["Headaches", "Seizures", "Vision problems", "Nausea", "Difficulty with balance", "Personality changes", "Weakness in limbs"],
+    "Meningioma": ["Headaches", "Seizures", "Vision changes", "Hearing loss", "Nausea", "Weakness", "Speech or movement difficulty"],
+    "No Tumor": ["No tumor-specific symptoms."],
+    "Pituitary Tumor": ["Headaches", "Vision problems", "Weight changes", "Mood swings", "Fatigue"],
 }
 
-# Load the trained model with caching
-@st.cache_data(show_spinner=False)
-def load_model(version="v1"):
+# Load the trained model
+def load_model():
     model_path = 'brain_tumor_detection_model.h5'
     return tf.keras.models.load_model(model_path)
 
@@ -72,15 +43,35 @@ model = load_model()
 
 # Function to preprocess the image
 def preprocess_image(image):
+    """Preprocess the image to match model input."""
+    # Ensure the image is in RGB
     if image.mode != 'RGB':
         image = image.convert('RGB')
+    
+    # Resize the image to match the model's input size (assuming the model was trained on 150x150 images)
     img = image.resize((150, 150))
+    
+    # Normalize the image (as the model might have been trained with normalized inputs)
     img_array = np.array(img) / 255.0
+    
+    # Expand dimensions to make it compatible with the model input
     img_array = np.expand_dims(img_array, axis=0)
+    
     return img_array
+
+# Function to resize the image for display
+def resize_image_for_display(image, max_width=512):
+    """Resize the image while maintaining aspect ratio for better display quality."""
+    width, height = image.size
+    if width > max_width:
+        aspect_ratio = height / width
+        new_height = int(aspect_ratio * max_width)
+        image = image.resize((max_width, new_height), Image.ANTIALIAS)
+    return image
 
 # Enhanced validation function using pydicom
 def is_valid_mri(file):
+    """Check if the uploaded file is a valid MRI image."""
     try:
         dicom_file = pydicom.dcmread(file, force=True)
         if dicom_file.Modality == 'MR':
@@ -93,13 +84,25 @@ def is_valid_mri(file):
             st.warning(f"Image validation failed: {e}")
     return False
 
-# Function to predict the tumor type and confidence score
-def predict(image):
+# Function to predict the tumor type and confidence score with thresholding
+def predict(image, threshold=75):
+    """Predict tumor type and apply confidence threshold."""
     preprocessed_image = preprocess_image(image)
     try:
+        # Get model predictions
         predictions = model.predict(preprocessed_image)
+        
+        # Print raw predictions for debugging
+        st.write(f"Raw Predictions: {predictions}")
+        
+        # Get the highest confidence score and corresponding tumor type
         confidence = np.max(predictions) * 100  # Convert to percentage
         tumor_type = categories[np.argmax(predictions)]
+        
+        # If confidence is below a threshold, raise uncertainty
+        if confidence < threshold:
+            tumor_type = "Potential tumor, please verify with a doctor"
+        
         return tumor_type, confidence
     except Exception as e:
         st.error(f"Error in prediction: {e}")
@@ -107,12 +110,13 @@ def predict(image):
 
 # Function to add model explainability using LIME
 def explain_prediction(image, model):
+    """Use LIME to explain the model's prediction."""
     try:
         # Ensure the image is in RGB format
         if image.mode != 'RGB':
             image = image.convert('RGB')
         
-        # Resize image to the required size
+        # Resize image to the required size for LIME
         img_array = np.array(image.resize((150, 150)))
         
         # Initialize LIME Image Explainer
@@ -136,41 +140,6 @@ def explain_prediction(image, model):
         st.pyplot(plt)
     except Exception as e:
         st.error(f"Error in explanation: {e}")
-
-
-# Function to get tumor information from Wikipedia
-# def get_tumor_info(tumor_type):
-#     try:
-#         summary = wikipedia.summary(tumor_type, sentences=2)
-#         return summary
-#     except wikipedia.exceptions.DisambiguationError:
-#         return f"Multiple results found for {tumor_type}. Please specify further."
-#     except wikipedia.exceptions.PageError:
-#         return f"No information found on Wikipedia for {tumor_type}."
-
-# Function to get a response from Google Gemini
-def get_chatbot_response(query):
-    try:
-        response = model_gemini.generate_text(prompt=query)
-        return response['text']
-    except Exception as e:
-        st.error(f"Error with Google Gemini API: {e}")
-        return "Sorry, I couldn't fetch the response."
-
-# Initialize TTS engine
-engine = pyttsx3.init()
-
-# Function to speak out the response
-# def speak_text(text):
-#     try:
-#         engine.say(text)
-#         engine.runAndWait()
-#     except Exception as e:
-#         st.error(f"Error with TTS: {e}")
-
-# Translate roles between Gemini-Pro and Streamlit terminology
-def translate_role_for_streamlit(user_role):
-    return "assistant" if user_role == "model" else user_role
 
 # Streamlit app interface
 st.title("Brain Tumor Detection & ChatBot")
@@ -221,35 +190,15 @@ elif app_mode == "Tumor Detection":
     if uploaded_file is not None:
         if is_valid_mri(uploaded_file):
             image = Image.open(uploaded_file)
-            st.image(image, caption="Uploaded Image", use_column_width=True)
+            resized_image = resize_image_for_display(image)  # Resize the image for better display
+            st.image(resized_image, caption="Uploaded Image", use_column_width=True)
 
             if st.button("Predict"):
-                with st.spinner('Predicting...'):
+                with st.spinner('Predicting....'):
                     prediction, confidence = predict(image)
                 if prediction:
                     st.write(f"Prediction: {prediction}")
                     st.write(f"Confidence: {confidence:.2f}%")  # Display confidence score
                     explain_prediction(image, model)
-                    # tumor_info = get_tumor_info(prediction)
-                    # st.write(f"Tumor Information: {tumor_info}")
-                    # speak_text(tumor_info)
         else:
             st.error("Invalid MRI image. Please upload a valid MRI image.")
-
-# elif app_mode == "HELP ASSIST":
-#     st.header("Chat with the Assist")
-
-#     # Initialize chat session if not already present
-#     if "chat_session" not in st.session_state:
-#         st.session_state.chat_session = model_gemini.generate_text(prompt="Initialize chat session")
-
-#     # Display the chat history
-#     if "chat_session" in st.session_state:
-#         st.write(st.session_state.chat_session)  # Modify as needed for proper chat history display
-
-#     # Input field for user's message
-#     user_prompt = st.chat_input("ASK FOR PRECAUTIONS:")
-#     if user_prompt:
-#         st.chat_message("user").markdown(user_prompt)
-#         gemini_response = get_chatbot_response(user_prompt)
-#         st.chat_message("assistant").markdown(gemini_response)
